@@ -24,6 +24,10 @@ Eu diria que a melhor linguagem para se trabalhar com qualquer problema de **Int
 
 Resolvi começar esta série de artigos porque fui convidado a lecionar um curso sobre implementação de soluções de **IA** utilizando Java, e quero compartilhar com vocês a minha experiência. 
 
+Estes primeiros exemplos incluem um [**Perceptron**](./perceptron) e um [**Multi Layer Perceptron**](./multilayerperceptron), ambos feitos em Java, sem o uso de qualquer framework de IA. É **claro que eles não são produtos prontos e nem estão otimizados, tenha isso em mente!** Eu jamais recomendaria que você criasse um framework de redes neurais do zero! Existem vários frameworks que funcionam em Java, como o [**Deeplearning4J**](https://deeplearning4j.org/) ou até mesmo o [**Tensorflow**](https://www.tensorflow.org/install/lang_java) e eu recomendo que você utilize um framework pronto para seus trabalhos de Deep Learning.
+
+O objetivo dos projetos que eu inclui aqui é **apenas ensinar o básico de redes neurais, mostrando sua implementação em Java. Só isso!** Eles não estão otimizados e nem prontos para virarem produtos ou serem utilizados em trabalhos finais.
+
 *Bom proveito!*
 
 ## Inteligência artificial
@@ -175,4 +179,136 @@ No exemplo de **MLP** usamos o **SGD - Stochastic Gradient Descent**. O que ele 
 Nesta otimização, buscamos o **mínimo global** da função de custo e vamos ajustando os pesos até que cheguemos perto dele. Note que, dependendo da função, pode haver **mínimos locais**, o que é indesejável. Para cada erro que encontramos, calculamos as derivadas parciais do erro pelos pesos, para sabermos o quanto cada peso contribuiu para aquele erro. A derivada é a tangente de um ponto da função, portanto, podemos saber o gradiente de cada peso.
 
 Por quê precisamos ajustar a velocidade do aprendizado? Sabe aquele termo em inglês: *jump to conclusion*, pois é... Se a taxa de aprendizado for muito alta, podemos pular o **mínimo global** e jamais convergirmos ou então cairmos em um **mínimo local**. Uma taxa muito baixa vai exigir muitas iterações para convergirmos.
+
+**Forward propagation**
+
+Antes de mais nada, precisamos gerar um conjunto de pesos e fazemos isto de maneira aleatória. Depois, precisamos gerar os valores de entrada, pegando uma amostra e usando suas variáveis. Então, calculamos o valor de cada nó usando o somatório dos valores x pesos e passando pelas funções de ativação, até chegar à saída. 
+
+Este processo pode ser feito com matrizes:
+
+![](./mlp.png)
+
+![](./forward.png)
+
+Para cada nó, calculamos o seu novo valor e o submetemos à sua **função de ativação**, gerando seu valor de saída (**outb1**) até chegar ao valor **z**. Eis o trecho de código que faz isso: 
+
+```
+	public void forwardPropagation(double [] x) {
+		this.input = MatrixUtils.createRealVector(x);
+		hiddenValues = hidden.operate(input).add(biasHidden).map(v -> sigmoid(v));
+		outputValue  = sigmoid(output.dotProduct(hiddenValues) + biasOutputWeight);
+	}
+```
+
+Forward propagation é muito simples de implementar com matrizes e vetores, por isso eu usei o pacote [**apache commons math**](https://commons.apache.org/proper/commons-math/).
+
+**Back propagation**
+
+Aqui o **"bicho" pega!** Backpropagation é complexo, pois exige que você conheça bem **álgebra linear** e **cálculo diferencial**, incluindo as **derivadas parciais** e a **regra da cadeia**. Além disso, temos que considerar qual o método de otimização da função de custo e qual a frequência de atualização dos pesos. É um processo doloroso e trabalhoso.
+
+Vou mostrar resumidamente o que seria a atualização de um peso usando [**backpropagation**](https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/), mas nem vou entrar no mérito das [**derivadas parciais**](https://pt.khanacademy.org/math/multivariable-calculus/multivariable-derivatives/partial-derivative-and-gradient-articles/a/introduction-to-partial-derivatives), coisa que foge ao objetivo deste artigo.
+
+Simplifiando ao máximo, começamos o backpropagation atualizando os pesos da camada de saída e depois atualizamos os da camada oculda (hidden).
+
+Vou mostrar como atualizaríamos o peso **w5**, que vai do nó **b1** para o nó de saída:
+
+![](./weight.png)
+
+Cada tipo de peso (regular ou bias) de cada camada tem uma fórmula de atualização diferente. Você pode ver no código de exemplo do [**MLP**](./multilayerperceptron/src/main/java/com/neuraljava/samples/mlp/MLP.java), no método *backPropagation()*. Eu atualizo cada camada e cada tipo de peso separadamente. Poderia fazer isso com matrizes também e, na verdade, foi a minha primeira abordagem, porém, ficaria impossível de entender. 
+
+```
+	public void backPropagation(double t) {
+		double z = this.outputValue;
+		double erro = Math.pow((t-z), 2);
+		double deltaz = (z - t) * z * (1 - z);
+		this.MSE += erro;
+		for(int i=0;i<2;i++) {
+			this.output.setEntry(i, 
+					this.output.getEntry(i) 
+					- this.learningHate 
+					* deltaz
+					* this.hiddenValues.getEntry(i)				
+					);
+		}
+		this.biasOutputWeight = this.biasOutputWeight 
+								- this.learningHate * deltaz;
+		for(int i=0;i<2;i++) {
+			for(int j=0;j<2;j++) {
+				this.hidden.setEntry(i, j, 
+						this.hidden.getEntry(i, i) 
+						- this.learningHate
+						* deltaz
+						* this.output.getEntry(j)
+						* this.hiddenValues.getEntry(j)
+						* (1 - this.hiddenValues.getEntry(j))
+						* this.input.getEntry(i)
+						);
+			}
+		}
+		for(int i=0;i<2;i++) {
+			this.biasHidden.setEntry(i, 
+					this.biasHidden.getEntry(i)
+					- this.learningHate
+					* deltaz
+					* this.output.getEntry(i)
+					* this.hiddenValues.getEntry(i)
+					* (1 - this.hiddenValues.getEntry(i))
+					);
+		}
+		
+	}
+
+	private double derivPesosBiasHidden(double t, double z, int i) {
+		double deriv = (z-t) * z * (1 - z) 
+				* this.output.getEntry(i)
+				* this.hiddenValues.getEntry(i)
+				* (1 - this.hiddenValues.getEntry(i));
+		return deriv;
+	}
+
+	private double derivPesosHidden(double t, double z, int i, int j) {
+		double deriv = (z-t) * z * (1 - z) * this.output.getEntry(j) 
+				* this.hiddenValues.getEntry(j) * (1 - this.hiddenValues.getEntry(j))
+				* this.input.getEntry(i);
+		return deriv;
+	}
+
+	private double derivPesosBiasOutput(double t, double z) {
+		return (z-t) * z * (1 - z);
+	}
+
+	private double derivPesosOutput(double t, double z, int i) {
+		double deriv = (z-t) * z * (1 - z) * this.hiddenValues.getEntry(i);
+		return deriv;
+	}
+```
+**Resultado**
+
+Este exemplo, **XOR**, é meio "ingrato". Como são só 4 elementos no arquivo de amostra, temos que rodar muitas iterações ou então mexer nos pesos. O **MLP** converge bem. Comembora talvez você tenha que executar mais de uma vez (eu usei pesos randômicos mais altos). Eis o resultado: 
+
+```
+Fim iteração: 493 MSE: 0.036502922841323227
+Fim iteração: 494 MSE: 0.036315130105117395
+Fim iteração: 495 MSE: 0.03612879832499851
+Fim iteração: 496 MSE: 0.035943914147383044
+Fim iteração: 497 MSE: 0.035760464333598946
+Fim iteração: 498 MSE: 0.0355784357595579
+Fim iteração: 499 MSE: 0.03539781541540097
+Fim iteração: 500 MSE: 0.035218590405118405
+Teste 0 previsto: 1.0 calculado: 0.8164162166620554
+Teste 1 previsto: 0.0 calculado: 0.17703646286551075
+Teste 2 previsto: 1.0 calculado: 0.8164162166620554
+Teste 3 previsto: 0.0 calculado: 0.1952421740319419
+```
+
+*Mas nãoe está dando o resultado 0 ou 1!* **CALMA!** É só usar Math.round() para aproximar de zero ou um. Você pode fazer isso na [parte de código que chama a previsão](./multilayerperceptron/src/main/java/com/neuraljava/samples/mlp/TestMLP.java): 
+
+```
+		for(int i=0;i<4;i++) {
+			mlp.forwardPropagation(teste[i]);
+			System.out.println("Teste " + i 
+					+ " previsto: " + real[i]
+					+ " calculado: " + mlp.outputValue); // use Math.round(mlp.outputValue)
+		}
+```
 
