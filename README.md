@@ -81,6 +81,21 @@ Para treinar um perceptron, temos algums **parâmetros** a ajustar:
 - Função de ativação: Qual a função de ativação que vamos usar para gerar a saída do nó;
 - Função de custo: Qual a função que queremos minimizar com o treinamento.
 
+A **função de ativação** regula a "saída" do neurônio. No caso do perceptron, a função mais utilizada é a **Binary step**: 
+
+![](./binary-step.png)
+
+```
+f(x) = 0 se x < 0 ou 1 caso contrário
+```
+Mas existem outras, como a **Sigmóide** (*sigmoid*), muito popular: 
+
+![](./sigmoid.png)
+
+![](./formula-sigmoid.png)
+
+No exemplo de perceptron que você verá, eu usei a função de ativação **Binary step**.
+
 **Learning hate** é um parâmetro importante, pois indica o quanto o modelo vai "aprender" a cada erro. Mas, o que é "aprender"? Qual é o objetivo do treinamento? Ai entra a **função de custo**. Em um perceptron, a função de custo pode ser simples como esta: 
 
 ```
@@ -91,17 +106,21 @@ Ou seja **t** que é o valor real ou **target** menos **z** que é a saída prod
 Precisamos otimizar essa função, procurando o seu mínimo e fazemos ajustes nos pesos para cada erro encontrado. Abra o projeto [**perceptron**](./perceptron) e execute. Você verá algo assim: 
 
 ```
-Iteração: 8, RMSE: 0.08451685277702517
-Iteração: 9, RMSE: 0.08038599611566254
-Iteração: 10, RMSE: 0.07697726935792881
+Iteração: 1, RMSE: 0.2837902619042413
+Iteração: 2, RMSE: 0.18318582636182792
+Iteração: 3, RMSE: 0.11585688927269845
+Iteração: 4, RMSE: 0.0
+Iteração: 5, RMSE: 0.0
+Iteração: 6, RMSE: 0.0
+Iteração: 7, RMSE: 0.0
+Iteração: 8, RMSE: 0.0
+Iteração: 9, RMSE: 0.0
+Iteração: 10, RMSE: 0.0
 x1:1.01071991464072 x2: 1.14385421069991 Origem: 1.0 Estimado: 1.0
 x1:0.074131851523044 x2: 0.123206823070496 Origem: 0.0 Estimado: 0.0
 x1:1.961556880148 x2: 1.46033212028283 Origem: 1.0 Estimado: 1.0
 x1:1.71230468169387 x2: 1.96311939860278 Origem: 1.0 Estimado: 1.0
 x1:1.70525169301648 x2: 1.30856225370596 Origem: 1.0 Estimado: 1.0
-x1:0.393956672046951 x2: 0.540630320013019 Origem: 0.0 Estimado: 0.0
-x1:0.299135720184961 x2: 0.843663552563487 Origem: 0.0 Estimado: 0.0
-x1:0.965832666407979 x2: 0.92372791146796 Origem: 0.0 Estimado: 0.0
 ```
 Ele **converge** muito rapidamente, chegando a taxas de erro bem pequenas. **Convergir** é o fato do modelo "aprender" a associar entradas com a saída.
 
@@ -139,3 +158,21 @@ Um perceptron não vai conseguir convergir com dados como estes. Para isto, prec
 Um **MLP** é um modelo de rede com vários nós (*neurônios*), organizados em camadas distintas: 
 
 ![](./mlp.png)
+
+O processo de aprendizagem de um **MLP** é basicamente o mesmo de um perceptron. Como existem múltiplas camadas de nós e bias, usamos uma técnica para correção de pesos chamada de **back propagation**. 
+
+Outras diferenças são:
+
+- **Função de ativação**: Usamos **sigmoid**, **ReLU**, **TanH** ou outras funções mais avançadas;
+- **Função de custo**: Podemos usar **Erro médio quadrático - MSE**, **Raiz do erro médio quadrático - RMSE**, **Soma dos quadrados dos erros - SSE**, **Entropia cruzada - Cross entropy** etc;
+- **Método de otimização da função de custo**: Podemos usar **Descida do Gradiente - Gradient Descent** ou **ADAM** para otimizar a função de custo;
+- **Frequência de atualização dos pesos**: Se usarmos Gradient Descent, podemos atualizar os pesos só ao final de uma iteração (**Batch Gradient Descent**), ou a cada amostra (**Stochastic Gradient Descent**) ou mesmo a cada intervalo de "n" amostras (**Mini Batch Gradient Descent**).
+
+No exemplo de **MLP** usamos o **SGD - Stochastic Gradient Descent**. O que ele faz? A cada amostra do cojunto, é calculado o erro. Depois, corrigimos cada peso de cada camada, utilizando o gradiente do erro, ou seja, a derivada parcial do erro sobre o peso, usando a **learning hate** para ajustar a velocidade do aprendizado.
+
+![](./gradient-descent.png)
+
+Nesta otimização, buscamos o **mínimo global** da função de custo e vamos ajustando os pesos até que cheguemos perto dele. Note que, dependendo da função, pode haver **mínimos locais**, o que é indesejável. Para cada erro que encontramos, calculamos as derivadas parciais do erro pelos pesos, para sabermos o quanto cada peso contribuiu para aquele erro. A derivada é a tangente de um ponto da função, portanto, podemos saber o gradiente de cada peso.
+
+Por quê precisamos ajustar a velocidade do aprendizado? Sabe aquele termo em inglês: *jump to conclusion*, pois é... Se a taxa de aprendizado for muito alta, podemos pular o **mínimo global** e jamais convergirmos ou então cairmos em um **mínimo local**. Uma taxa muito baixa vai exigir muitas iterações para convergirmos.
+
