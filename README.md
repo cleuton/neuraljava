@@ -172,7 +172,7 @@ Outras diferenças são:
 - **Método de otimização da função de custo**: Podemos usar **Descida do Gradiente - Gradient Descent** ou **ADAM** para otimizar a função de custo;
 - **Frequência de atualização dos pesos**: Se usarmos Gradient Descent, podemos atualizar os pesos só ao final de uma iteração (**Batch Gradient Descent**), ou a cada amostra (**Stochastic Gradient Descent**) ou mesmo a cada intervalo de "n" amostras (**Mini Batch Gradient Descent**).
 
-No exemplo de **MLP** usamos o **SGD - Stochastic Gradient Descent**. O que ele faz? A cada amostra do cojunto, é calculado o erro. Depois, corrigimos cada peso de cada camada, utilizando o gradiente do erro, ou seja, a derivada parcial do erro sobre o peso, usando a **learning hate** para ajustar a velocidade do aprendizado.
+No exemplo de **MLP** usamos o **GD - Gradient Descent**. O que ele faz? A cada amostra do cojunto, é calculado o erro. Depois, corrigimos cada peso de cada camada, utilizando o gradiente do erro, ou seja, a derivada parcial do erro sobre o peso, usando a **learning hate** para ajustar a velocidade do aprendizado. Poderíamos usar o **SGD - Stochastic Gradient Descent**, selecionando amostras aleatórias dos dados para corrigir os pesos, mas, com amostra tão pequena, não vale a pena.
 
 ![](./gradient-descent.png)
 

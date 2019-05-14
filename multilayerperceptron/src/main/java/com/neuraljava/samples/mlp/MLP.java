@@ -49,7 +49,7 @@ public class MLP {
 	}
 	
 	/**
-	 * Backpropagation usando Stochastic Gradient Descent
+	 * Backpropagation usando Gradient Descent
 	 * @param y double saída esperada de um exemplo
 	 * @param deltaz2 
 	 */
