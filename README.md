@@ -312,3 +312,12 @@ Teste 3 previsto: 0.0 calculado: 0.1952421740319419
 		}
 ```
 
+## Classificação multiclasse com MLP
+
+![](./iris.png)
+
+Podemos ter vários neurônios (ou nõs) de saída, caso o problema de classificação que queiramos resolver seja multiclasse. Um exemplo disso é o famoso dataset [**IRIS**](http://www.lac.inpe.br/~rafael.santos/Docs/R/CAP394/WholeStory-Iris.html), uma pesquisa classificatória que dividiu as espécies de flores IRIS em 3 categorias, de acordo com 4 características. 
+
+Para classificar as flores, precisamos da **não linearidade** proporcionada por um **MLP**. 
+
+Veja [**esta demonstração em Java puro**](./iris) de uma rede classificadora para o *IRIS Dataset*. Nada de framework, nada de biblioteca... Puro Java.
