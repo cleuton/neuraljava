@@ -36,11 +36,11 @@ Precisamos que nosso modelo "aprenda" os pesos a serem utilizados para estimar a
 		int categorias = 3;
 		int variaveis = 4;
 		int epochs = 1000;
-		double learningHate = 0.01;
+		double learningRate = 0.01;
 		
 		double [][] iris = loadIris(irisElementos, categorias, variaveis);		
 		
-		model.fit(iris, 120, epochs,learningHate);
+		model.fit(iris, 120, epochs,learningRate);
 ```
 
 O método **fit()** treina o modelo utilizando os dados de teste (120 registros de um total de 150). Mas, *qual modelo*? O modelo é montado um pouco antes de invocarmos o **fit()** e eu me inspirei no modelo do [**Keras**](https://keras.io/) para criar essa API: 
@@ -79,7 +79,7 @@ Na verdade, queremos **otimizar** a função de custo, encontrando o seu valor m
 
 Nossa função de custo é o **MSE**, então, queremos chegar aos valores dos pesos que propiciem um menor MSE possível. 
 
-O método de cálculo da *backpropagation* é encontrar o **gradiente** (a taxa de variação de cada peso em função da saída), e modificar os pesos de acordo com a **taxa de aprendizado** (**learning hate**) e o próprio **gradiente**. Pouco a pouco vamos modificando os pesos até o treinamento terminar. Pode ser que tenhamos encontraro o **mínimo global** ou não. Mas paramos quando considerarmos o erro (o valor do MSE) razoável.
+O método de cálculo da *backpropagation* é encontrar o **gradiente** (a taxa de variação de cada peso em função da saída), e modificar os pesos de acordo com a **taxa de aprendizado** (**learning rate**) e o próprio **gradiente**. Pouco a pouco vamos modificando os pesos até o treinamento terminar. Pode ser que tenhamos encontraro o **mínimo global* ou não. Mas paramos quando considerarmos o erro (o valor do MSE) razoável.
 
 **Derivadas parciais** - Precisamos calcular as [*derivadas parciais*](https://towardsdatascience.com/step-by-step-the-math-behind-neural-networks-ac15e178bbd) do erro com relação a cada peso da rede. 
 
@@ -132,7 +132,7 @@ O código Java faz isso na classe [**Model**, dentro do método **backPropagatio
 			Layer layer = this.layers.get(la);
 			for (Node node : layer.nodes) {
 				for (Sinapse sinapse : node.sinapses) {
-					sinapse.weight = sinapse.weight - learningHate * sinapse.gradient;
+					sinapse.weight = sinapse.weight - learningRate * sinapse.gradient;
 				}
 			}
 		}

@@ -85,7 +85,7 @@ public class Model {
 	}
 	
 	
-	public void backPropagation(double [] target, double learningHate) {
+	public void backPropagation(double [] target, double learningRate) {
 		// Começamos pela penúltima camada:
 		int indiceUltima = this.layers.indexOf(this.lastLayer);
 		Layer ultima = this.layers.get(indiceUltima);
@@ -142,13 +142,13 @@ public class Model {
 			Layer layer = this.layers.get(la);
 			for (Node node : layer.nodes) {
 				for (Sinapse sinapse : node.sinapses) {
-					sinapse.weight = sinapse.weight - learningHate * sinapse.gradient;
+					sinapse.weight = sinapse.weight - learningRate * sinapse.gradient;
 				}
 			}
 		}
 	}
 	
-	public void fit(double [][] dataset, int trainCount,int epochs, double learningHate) {
+	public void fit(double [][] dataset, int trainCount,int epochs, double learningRate) {
 		for (int epoch=0; epoch<epochs; epoch++) {
 			double MSE = 0.0;
 			for (int n=0; n<trainCount; n++) {
@@ -156,7 +156,7 @@ public class Model {
 				for (int z=0;z<outputs.length;z++) {
 					MSE += Math.pow((dataset[n][4+z] - outputs[z]), 2);
 				}
-				this.backPropagation(getTargets(dataset[n]), learningHate); // Gradient Descent
+				this.backPropagation(getTargets(dataset[n]), learningRate); // Gradient Descent
 			}
 			MSE = MSE / trainCount;
 			logger.info("Epoch: " + epoch + " MSE: " + MSE);

@@ -21,7 +21,7 @@ public class MLP {
 	public RealVector output;
 	public double outputValue;
 	public double biasOutputWeight;
-	public double learningHate;
+	public double learningRate;
 	public int iterations;
 	public double MSE;
 	private Random random = new Random();
@@ -34,7 +34,7 @@ public class MLP {
 		this.biasHidden = MatrixUtils.createRealVector(random.doubles(2,-2,2.01).toArray());
 		this.output = MatrixUtils.createRealVector(random.doubles(2,-2,2.01).toArray());
 		biasOutputWeight = random.doubles(-2, 2.01).findFirst().getAsDouble();
-		this.learningHate = 0.2;
+		this.learningRate = 0.2;
 		this.iterations = 100;
 	}
 	
@@ -61,18 +61,18 @@ public class MLP {
 		for(int i=0;i<2;i++) {
 			this.output.setEntry(i, 
 					this.output.getEntry(i) 
-					- this.learningHate 
+					- this.learningRate 
 					* deltaz
 					* this.hiddenValues.getEntry(i)				
 					);
 		}
 		this.biasOutputWeight = this.biasOutputWeight 
-								- this.learningHate * deltaz;
+								- this.learningRate * deltaz;
 		for(int i=0;i<2;i++) {
 			for(int j=0;j<2;j++) {
 				this.hidden.setEntry(i, j, 
 						this.hidden.getEntry(i, i) 
-						- this.learningHate
+						- this.learningRate
 						* deltaz
 						* this.output.getEntry(j)
 						* this.hiddenValues.getEntry(j)
@@ -84,7 +84,7 @@ public class MLP {
 		for(int i=0;i<2;i++) {
 			this.biasHidden.setEntry(i, 
 					this.biasHidden.getEntry(i)
-					- this.learningHate
+					- this.learningRate
 					* deltaz
 					* this.output.getEntry(i)
 					* this.hiddenValues.getEntry(i)

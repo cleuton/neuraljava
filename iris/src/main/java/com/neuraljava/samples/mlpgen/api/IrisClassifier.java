@@ -47,11 +47,11 @@ public class IrisClassifier {
 		int categorias = 3;
 		int variaveis = 4;
 		int epochs = 1000;
-		double learningHate = 0.01;
+		double learningRate = 0.01;
 		
 		double [][] iris = loadIris(irisElementos, categorias, variaveis);		
 		
-		model.fit(iris, 120, epochs,learningHate);
+		model.fit(iris, 120, epochs,learningRate);
 		
 		int erros = 0;
 		int contagem = 0;

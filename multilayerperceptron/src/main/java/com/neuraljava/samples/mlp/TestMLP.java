@@ -11,7 +11,7 @@ public class TestMLP {
 				{1,0},{0,1},{1,1},{0,0}
 		};
 		double [] y = {1,1,0,0};
-		mlp.learningHate = 0.4;
+		mlp.learningRate = 0.4;
 		mlp.iterations = 500;
 		mlp.treinar(X, y);
 		double [][] teste = {{0,1},{0,0},{1,0},{1,1}};

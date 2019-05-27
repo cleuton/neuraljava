@@ -80,7 +80,7 @@ Inicialmente, todos os pesos são gerados aleatóriamente (entre -1 e 1, entre 0
 Para treinar um perceptron, temos algums **parâmetros** a ajustar:
 - Quantidade de entradas: (**i**) Quantas variáveis de entrada teremos;
 - Quantidade de dados: (**n**) Quantos conjuntos de variáveis teremos para treinar e para testar;
-- Taxa de aprendizado: **Learning hate** o quanto vamos ajustar os pesos a cada erro descoberto;
+- Taxa de aprendizado: **Learning rate** o quanto vamos ajustar os pesos a cada erro descoberto;
 - Número de iterações: (**epochs**) quantas vezes vamos repetir o treinamento com todos os dados de treino;
 - Função de ativação: Qual a função de ativação que vamos usar para gerar a saída do nó;
 - Função de custo: Qual a função que queremos minimizar com o treinamento.
@@ -100,7 +100,7 @@ Mas existem outras, como a **Sigmóide** (*sigmoid*), muito popular:
 
 No exemplo de perceptron que você verá, eu usei a função de ativação **Binary step**.
 
-**Learning hate** é um parâmetro importante, pois indica o quanto o modelo vai "aprender" a cada erro. Mas, o que é "aprender"? Qual é o objetivo do treinamento? Ai entra a **função de custo**. Em um perceptron, a função de custo pode ser simples como esta: 
+**Learning rate** é um parâmetro importante, pois indica o quanto o modelo vai "aprender" a cada erro. Mas, o que é "aprender"? Qual é o objetivo do treinamento? Ai entra a **função de custo**. Em um perceptron, a função de custo pode ser simples como esta: 
 
 ```
 erro = t - z
@@ -172,7 +172,7 @@ Outras diferenças são:
 - **Método de otimização da função de custo**: Podemos usar **Descida do Gradiente - Gradient Descent** ou **ADAM** para otimizar a função de custo;
 - **Frequência de atualização dos pesos**: Se usarmos Gradient Descent, podemos atualizar os pesos só ao final de uma iteração (**Batch Gradient Descent**), ou a cada amostra (**Stochastic Gradient Descent**) ou mesmo a cada intervalo de "n" amostras (**Mini Batch Gradient Descent**).
 
-No exemplo de **MLP** usamos o **GD - Gradient Descent**. O que ele faz? A cada amostra do cojunto, é calculado o erro. Depois, corrigimos cada peso de cada camada, utilizando o gradiente do erro, ou seja, a derivada parcial do erro sobre o peso, usando a **learning hate** para ajustar a velocidade do aprendizado. Poderíamos usar o **SGD - Stochastic Gradient Descent**, selecionando amostras aleatórias dos dados para corrigir os pesos, mas, com amostra tão pequena, não vale a pena.
+No exemplo de **MLP** usamos o **GD - Gradient Descent**. O que ele faz? A cada amostra do cojunto, é calculado o erro. Depois, corrigimos cada peso de cada camada, utilizando o gradiente do erro, ou seja, a derivada parcial do erro sobre o peso, usando a **learning rate** para ajustar a velocidade do aprendizado. Poderíamos usar o **SGD - Stochastic Gradient Descent**, selecionando amostras aleatórias dos dados para corrigir os pesos, mas, com amostra tão pequena, não vale a pena.
 
 ![](./gradient-descent.png)
 
@@ -225,18 +225,18 @@ Cada tipo de peso (regular ou bias) de cada camada tem uma fórmula de atualiza�
 		for(int i=0;i<2;i++) {
 			this.output.setEntry(i, 
 					this.output.getEntry(i) 
-					- this.learningHate 
+					- this.learningRate 
 					* deltaz
 					* this.hiddenValues.getEntry(i)				
 					);
 		}
 		this.biasOutputWeight = this.biasOutputWeight 
-								- this.learningHate * deltaz;
+								- this.learningRate * deltaz;
 		for(int i=0;i<2;i++) {
 			for(int j=0;j<2;j++) {
 				this.hidden.setEntry(i, j, 
 						this.hidden.getEntry(i, i) 
-						- this.learningHate
+						- this.learningRate
 						* deltaz
 						* this.output.getEntry(j)
 						* this.hiddenValues.getEntry(j)
@@ -248,7 +248,7 @@ Cada tipo de peso (regular ou bias) de cada camada tem uma fórmula de atualiza�
 		for(int i=0;i<2;i++) {
 			this.biasHidden.setEntry(i, 
 					this.biasHidden.getEntry(i)
-					- this.learningHate
+					- this.learningRate
 					* deltaz
 					* this.output.getEntry(i)
 					* this.hiddenValues.getEntry(i)
