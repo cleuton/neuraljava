@@ -32,6 +32,8 @@ model.save("meu_mnist.h5")
 
 O formato [**HDF5**](https://www.tinymind.com/learn/terms/hdf5) preserva a arquitetura e os pesos encontrados. 
 
+**Atenção:** Depois de executar o treinamento, copie o arquivo **meu_mnist.h5** para a pasta ./java/src/main/resources!
+
 Agora é só ir para a parte **Java**.
 
 ## Rodando o modelo em "produção"
@@ -47,7 +49,7 @@ Essa é uma boa pergunta! Poderíamos utilizar o [**DeepLearning4j**](https://de
 Vamos criar uma app **Java** com **maven** e importar o arquivo de modelo salvo. Na verdade, vamos embutir o modelo dentro dos **resources** do projeto.
 
 O projeto **maven** está na pasta [**java**](./java) com vários arquivos: 
-- [**src**](./java/src): Pasta onde está o código-fonte e eu já coloquei o arquivo de modelo dentro de src/main/resources;
+- [**src**](./java/src): Pasta onde está o código-fonte;
 - [**pom.xml**](./java/pom.xml): Arquivo do projeto maven;
 - [**dois.png**](./java/dois.png): Arquivo de imagem para inferir em produção;
 - [**resultado.png**](./java/resultado.png): Imagem do programa já executado com a inferência correta.
