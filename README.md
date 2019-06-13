@@ -321,3 +321,19 @@ Podemos ter vários neurônios (ou nõs) de saída, caso o problema de classific
 Para classificar as flores, precisamos da **não linearidade** proporcionada por um **MLP**. 
 
 Veja [**esta demonstração em Java puro**](./iris) de uma rede classificadora para o *IRIS Dataset*. Nada de framework, nada de biblioteca... Puro Java.
+
+## Desenvolvimento em Python com produção em Java
+
+![](./python_java.png)
+
+Não é preciso muito para concluir que **Java** é uma ótima opção para entregar aplicações em ambiente produtivo. É mais *limpa* e possui menos dependências *espalhadas* que outras linguagens de programação, como **Python** (que, por sinal, eu adoro). 
+Mas temos que enxergar a realidade. Enquanto **Python** é excelente para desenvolvimento, prototipação e experimentação, especialmente em ciência de dados e IA, perde um pouco quando pensamos em ambiente produtivo. Por quê? 
+- **Performance**: Além da questão do [**GIL**](https://wiki.python.org/moin/GlobalInterpreterLock), há vários *benchmarks* que comprovam o desempenho superior de aplicações Java, como este: https://benchmarksgame-team.pages.debian.net/benchmarksgame/fastest/python.html;
+- **Robustez**: Com **Java**, temos pouca **entropia** de ambiente, isso quer dizer, menos dependências *espalhadas* e menos fragilidade. Basta que a JVM esteja instalada corretamente, que o resto das dependências pode ser *embutida* em um **uber jar** ou um **war**. Em outras linguagens, como **Python**, dependemos muito mais de um ambiente configurado, seja com **Anaconda** ou **virtualenv**, o que *espalha* as dependências para fora da sua aplicação;
+- **Segurança**: Embora existam decompiladores **Java**, podemos [*obfuscar* o **bytecode**](https://www.owasp.org/index.php/Bytecode_obfuscation) e entregar apenas o *executável*. Em outras linguagens, como **Python**, ficamos limitados a entregar o código-fonte. É claro que podemos utilizar algo como **Cython** e gerar um executável, mas, nem todas as dependências são compatíveis com isto.
+
+O objetivo desta demonstração é mostrar como é possível nos beneficiarmos das vantagens de ambas as ferramentas, **Java** e **Python**, preparando aplicações de **Deep Learning** de maneira fácil e robusta para entrarem em **Produção**.
+
+Esta demonstração consiste em um **notebook** com código **python**, que lê e classifica o dataset **MNIST**, criando um modelo que será lido por um programa **Java**, utilizando-o para classificar novas imagens.
+
+[**Confira tudo aqui**](./python_java_keras)
