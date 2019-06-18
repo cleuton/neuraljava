@@ -337,3 +337,7 @@ O objetivo desta demonstração é mostrar como é possível nos beneficiarmos d
 Esta demonstração consiste em um **notebook** com código **python**, que lê e classifica o dataset **MNIST**, criando um modelo que será lido por um programa **Java**, utilizando-o para classificar novas imagens.
 
 [**Confira tudo aqui**](./python_java_keras)
+
+## GPU ou CPU
+
+GPU é melhor que CPU para processamento de **Deep Learning**? Como programamos uma GPU? Como podemos fazer isso em **Java**? Veja isso tudo em: [**GPU X CPU**](./gpu_cpu).
