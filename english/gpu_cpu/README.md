@@ -1,10 +1,10 @@
-![](../icone.png)
+![](../../icone.png)
 
 # Neural Networks and Deep Learning using Java
 
 [**Cleuton Sampaio**](https://github.com/cleuton) - [**LinkedIn**](https://www.linkedin.com/in/cleutonsampaio/) 
 
-![](../88x31.png)
+![](../../88x31.png)
 
 ## GPU vs CPU?
 

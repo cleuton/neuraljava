@@ -4,6 +4,8 @@
 
 ![](../88x31.png)
 
+[**English version**](../english/gpu_cpu)
+
 ## GPU ou CPU?
 
 Uma grande dúvida dos desenolvedores de aplicações de Machine Learning e de Deep Learning é sobre a necessidade ou não de usar um computador com GPU, afinal de contas, GPUs ainda são muito caras. Para ter uma ideia, veja o preço de uma GPU típica para processamento de IA no Brasil custa algo entre US$ 1.000,00 e US$ 7.000,00 (ou mais). 
