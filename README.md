@@ -344,3 +344,8 @@ Esta demonstração consiste em um **notebook** com código **python**, que lê 
 ## GPU ou CPU
 
 GPU é melhor que CPU para processamento de **Deep Learning**? Como programamos uma GPU? Como podemos fazer isso em **Java**? Veja isso tudo em: [**GPU X CPU**](./gpu_cpu).
+
+## CNN usando Java
+
+Veja um modelo completo de reconhecimento facial usando **Convolutional Neural Network** em Java: [**Confira aqui**](./cnn_java).
+
