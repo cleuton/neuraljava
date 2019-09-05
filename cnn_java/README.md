@@ -35,6 +35,8 @@ Imagem preparada:
 
 ![](./cleuton_0010.jpg)
 
+Eu baixei o database LFW e extraí as imagens, mudando um pouco a estrutura. Em vez de pastas com o nome das pessoas, eu juntei todos os arquivos e pego o nome a partir do path dos arquivos.
+
 ## Preprocessamento de imagens
 
 A classe [**PrepareFaces.java**](./src/main/java/com/neuraljava/demos/imageutil/PrepareFaces.java) possui o método **getFaces()** que utiliza as classes do **OpenIMAJ** para detectar, extrair e alinhar os rostos, criando novas imagens.
@@ -84,31 +86,36 @@ public class PrepareFaces {
 Utilizando o **Deeplearning4J** criamos o modelo de rede neural na classe [**TrainModel**](../src/main/java/com/neuraljava/demos/imageutil/TrainModel.java): 
 
 ```
-	private static final Logger log = Logger.getLogger(TrainModel.class.getName());
-	public static void train(String imagePath, String modelPath, int numLabels, String testImage) throws IOException {
-		
 		// Random
 		int seed = 42;
 		Random random = new Random(seed);
 		
-		// Hiperparameters
+		// Hiperparametros
+		
 		int height = 80;
 		int width = 80;
 		int channels = 1;
 		int batchSize = 10;
-		double trainTestRatio = 0.7;
+		double trainTestRatio = 0.6;
 		int iterations = 1;
-		int epochs = 50;
+		int epochs = 500;
 		double learningRate = 0.01;
 		
-		// Prepare dataset:
+		// Preparar dataset com o nosso label generator:
 		
         LabelGen labelMaker = new LabelGen();
         File mainPath = new File(imagePath);
         FileSplit fileSplit = new FileSplit(mainPath, NativeImageLoader.ALLOWED_FORMATS, random);
         int numExamples = Math.toIntExact(fileSplit.length());
+        BalancedPathFilter pathFilter = new BalancedPathFilter(random, labelMaker, numExamples, numLabels, 0);
         
-        // Network configuration:
+        // Separação treino e teste:
+        
+        InputSplit[] inputSplit = fileSplit.sample(pathFilter, trainTestRatio, 1 - trainTestRatio);
+        InputSplit trainData = inputSplit[0];
+        InputSplit testData = inputSplit[1];
+        
+        // Configuração da rede:
         
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .seed(seed)
@@ -143,12 +150,76 @@ Utilizando o **Deeplearning4J** criamos o modelo de rede neural na classe [**Tra
                         .build())
                 .setInputType(InputType.convolutionalFlat(height,width,1)) 
                 .build();
-        MultiLayerNetwork network = new MultiLayerNetwork(conf);
-
-        network.init();
 ```
 
 Para inferir as classes a partir do nome do arquivo, tive que criar a classe [**LabelGen**](./src/main/java/com/neuraljava/demos/imageutil/LabelGen.java), que implementa a interface **PathLabelGenerator**.
+
+É preciso preparar os dados para alimentar o modelo: 
+
+```
+        // Carga dos dados:
+        
+        DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
+        
+        // Iterador de treino:
+        
+        ImageRecordReader trainRR = new ImageRecordReader(height, width, channels, labelMaker);
+        DataSetIterator trainIter;
+        trainRR.initialize(trainData, null);
+        trainIter = new RecordReaderDataSetIterator(trainRR, batchSize, 1, numLabels);
+        scaler.fit(trainIter);
+        trainIter.setPreProcessor(scaler);
+        
+        // Iterador de teste:
+        
+        ImageRecordReader testRR = new ImageRecordReader(height, width, channels, labelMaker);
+        testRR.initialize(testData);
+        DataSetIterator testIter = new RecordReaderDataSetIterator(testRR, batchSize, 1, numLabels);
+        scaler.fit(testIter);
+        testIter.setPreProcessor(scaler);
+
+```
+
+E, finalmente, eu uso o conceito de **Early Stopping** para gerar o modelo de melhor desempenho: 
+
+```
+        // Configuração de Early Stopping:
+        
+        int maxEpochsWithNoImprovement = 10;
+        EarlyStoppingConfiguration esConf = new EarlyStoppingConfiguration.Builder()
+        		.epochTerminationConditions(new MaxEpochsTerminationCondition(epochs),new ScoreImprovementEpochTerminationCondition(maxEpochsWithNoImprovement) )
+        		.iterationTerminationConditions(new MaxTimeIterationTerminationCondition(20, TimeUnit.MINUTES))
+        		.scoreCalculator(new DataSetLossCalculator(testIter, true))
+                .evaluateEveryNEpochs(1)
+        		.modelSaver(new LocalFileModelSaver(modelPath))
+        		.build();
+        
+        EarlyStoppingTrainer trainer = new EarlyStoppingTrainer(esConf,conf,trainIter);
+
+        // Treinamento da rede: 
+
+        EarlyStoppingResult result = trainer.fit();
+        System.out.println("Termination reason: " + result.getTerminationReason());
+        System.out.println("Termination details: " + result.getTerminationDetails());
+        System.out.println("Total epochs: " + result.getTotalEpochs());
+        System.out.println("Best epoch number: " + result.getBestModelEpoch());
+        System.out.println("Score at best epoch: " + result.getBestModelScore());
+        
+        // Recupera o modelo com melhor desempenho:
+        
+        MultiLayerNetwork net = (MultiLayerNetwork) result.getBestModel();  
+        
+        // Predições:
+
+        trainIter.reset();
+        DataSet testDataSet = trainIter.next();
+        List<String> allClassLabels = trainRR.getLabels();
+        int labelIndex = testDataSet.getLabels().argMax(1).getInt(0);
+        int[] predictedClasses = net.predict(testDataSet.getFeatures());
+        String expectedResult = allClassLabels.get(labelIndex);
+        String modelPrediction = allClassLabels.get(predictedClasses[0]);
+        System.out.print("\nNome da pessoa: " + expectedResult + " predição: " + modelPrediction + "\n\n");
+```
 
 ## Uso de GPU
 
@@ -171,7 +242,6 @@ Esta demonstração utiliza a **GPU** para executar o treinamento da rede neural
 
 Ao executar o comando ```mvn clean package``` será criado um **uber jar** contendo todas as classes. Basta executá-lo passando os argumentos: 
 
-1. Path das imagens originais;
-2. Path onde as imagens processadas serão gravadas;
-3. Path onde o modelo será salvo;
-4. Path da imagem de teste;
+1. args 0: Path das imagens originais;
+2. args 1: Path para gravar as imagens processadas;
+3. args 2: Path para salvar o modelo.
