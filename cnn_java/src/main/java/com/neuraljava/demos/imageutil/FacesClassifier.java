@@ -38,10 +38,9 @@ public class FacesClassifier {
 		 * args 0: raw images path
 		 * args 1: processed images path
 		 * args 2: model save path
-		 * args 3: test image
 		 */
 		Set<String> classes = PrepareFaces.prepareImages(args[0], args[1]);
 		System.out.println("Classes: " + classes.size());
-		TrainModel.train(args[1], args[2], classes.size(), args[3]);
+		TrainModel.train(args[1], args[2], classes.size());
 	}
 }

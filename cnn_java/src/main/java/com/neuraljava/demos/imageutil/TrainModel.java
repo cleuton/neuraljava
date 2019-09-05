@@ -16,25 +16,27 @@ There is also the complete Apache License v2 available in HTML and TXT formats.
  */
 package com.neuraljava.demos.imageutil;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import javax.imageio.ImageIO;
 
 import org.datavec.api.io.filters.BalancedPathFilter;
 import org.datavec.api.split.FileSplit;
 import org.datavec.api.split.InputSplit;
 import org.datavec.image.loader.NativeImageLoader;
 import org.datavec.image.recordreader.ImageRecordReader;
-import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
-import org.deeplearning4j.datasets.iterator.MultipleEpochsIterator;
-import org.deeplearning4j.eval.Evaluation;
+import org.deeplearning4j.earlystopping.EarlyStoppingConfiguration;
+import org.deeplearning4j.earlystopping.EarlyStoppingResult;
+import org.deeplearning4j.earlystopping.saver.LocalFileModelSaver;
+import org.deeplearning4j.earlystopping.scorecalc.DataSetLossCalculator;
+import org.deeplearning4j.earlystopping.termination.MaxEpochsTerminationCondition;
+import org.deeplearning4j.earlystopping.termination.MaxTimeIterationTerminationCondition;
+import org.deeplearning4j.earlystopping.termination.ScoreImprovementEpochTerminationCondition;
+import org.deeplearning4j.earlystopping.trainer.EarlyStoppingTrainer;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.inputs.InputType;
@@ -45,45 +47,49 @@ import org.deeplearning4j.nn.conf.layers.PoolingType;
 import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.ui.api.UIServer;
-import org.deeplearning4j.ui.stats.StatsListener;
-import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
-import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
+import org.nd4j.linalg.dataset.SplitTestAndTrain;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
+import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
-import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 public class TrainModel {
 	private static final Logger log = Logger.getLogger(TrainModel.class.getName());
-	public static void train(String imagePath, String modelPath, int numLabels, String testImage) throws IOException {
+	public static void train(String imagePath, String modelPath, int numLabels) throws IOException {
 		
 		// Random
 		int seed = 42;
 		Random random = new Random(seed);
 		
-		// Hiperparameters
+		// Hiperparametros
+		
 		int height = 80;
 		int width = 80;
 		int channels = 1;
 		int batchSize = 10;
-		double trainTestRatio = 0.7;
+		double trainTestRatio = 0.6;
 		int iterations = 1;
-		int epochs = 50;
+		int epochs = 500;
 		double learningRate = 0.01;
 		
-		// Prepare dataset:
+		// Preparar dataset com o nosso label generator:
 		
         LabelGen labelMaker = new LabelGen();
         File mainPath = new File(imagePath);
         FileSplit fileSplit = new FileSplit(mainPath, NativeImageLoader.ALLOWED_FORMATS, random);
         int numExamples = Math.toIntExact(fileSplit.length());
+        BalancedPathFilter pathFilter = new BalancedPathFilter(random, labelMaker, numExamples, numLabels, 0);
         
-        // Network configuration:
+        // Separação treino e teste:
+        
+        InputSplit[] inputSplit = fileSplit.sample(pathFilter, trainTestRatio, 1 - trainTestRatio);
+        InputSplit trainData = inputSplit[0];
+        InputSplit testData = inputSplit[1];
+        
+        // Configuração da rede:
         
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .seed(seed)
@@ -118,66 +124,66 @@ public class TrainModel {
                         .build())
                 .setInputType(InputType.convolutionalFlat(height,width,1)) 
                 .build();
-        MultiLayerNetwork network = new MultiLayerNetwork(conf);
+        
+        // Carga dos dados:
+        
+        DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
+        
+        // Iterador de treino:
+        
+        ImageRecordReader trainRR = new ImageRecordReader(height, width, channels, labelMaker);
+        DataSetIterator trainIter;
+        trainRR.initialize(trainData, null);
+        trainIter = new RecordReaderDataSetIterator(trainRR, batchSize, 1, numLabels);
+        scaler.fit(trainIter);
+        trainIter.setPreProcessor(scaler);
+        
+        // Iterador de teste:
+        
+        ImageRecordReader testRR = new ImageRecordReader(height, width, channels, labelMaker);
+        testRR.initialize(testData);
+        DataSetIterator testIter = new RecordReaderDataSetIterator(testRR, batchSize, 1, numLabels);
+        scaler.fit(testIter);
+        testIter.setPreProcessor(scaler);
+        
+        // Configuração de Early Stopping:
+        
+        int maxEpochsWithNoImprovement = 10;
+        EarlyStoppingConfiguration esConf = new EarlyStoppingConfiguration.Builder()
+        		.epochTerminationConditions(new MaxEpochsTerminationCondition(epochs),new ScoreImprovementEpochTerminationCondition(maxEpochsWithNoImprovement) )
+        		.iterationTerminationConditions(new MaxTimeIterationTerminationCondition(20, TimeUnit.MINUTES))
+        		.scoreCalculator(new DataSetLossCalculator(testIter, true))
+                .evaluateEveryNEpochs(1)
+        		.modelSaver(new LocalFileModelSaver(modelPath))
+        		.build();
+        
+        EarlyStoppingTrainer trainer = new EarlyStoppingTrainer(esConf,conf,trainIter);
 
-        network.init();
-        
-        // Initialize the user interface backend
-        // Be careful: It slows the performance for classification!
-        /*
-        UIServer uiServer = UIServer.getInstance();
-        StatsStorage statsStorage = new InMemoryStatsStorage();         
-        uiServer.attach(statsStorage);
-        int listenerFrequency = 1;
-        network.setListeners(new StatsListener(statsStorage,listenerFrequency));
-        */
-        
-        
-        // Load data:
-        
-        ImageRecordReader recordReader = new ImageRecordReader(height, width, channels, labelMaker);
-        recordReader.initialize(fileSplit);
-        
-        //DataSetIterator dataIter = new RecordReaderDataSetIterator(recordReader, batchSize, 1, numLabels);
-        DataSetIterator dataIter = new RecordReaderDataSetIterator.Builder(recordReader, batchSize)
-        	       .classification(1, numLabels)
-        	       .preProcessor(new ImagePreProcessingScaler())      
-        	       .build();
-  
-        network.fit(dataIter, epochs);
-        
-        List<String> allClassLabels = recordReader.getLabels();
-        System.out.println("Labels in order: " + allClassLabels);
-        
-        dataIter.reset();
-        DataSet testDataSet = dataIter.next();
+        // Treinamento da rede: 
 
+        EarlyStoppingResult result = trainer.fit();
+        System.out.println("Termination reason: " + result.getTerminationReason());
+        System.out.println("Termination details: " + result.getTerminationDetails());
+        System.out.println("Total epochs: " + result.getTotalEpochs());
+        System.out.println("Best epoch number: " + result.getBestModelEpoch());
+        System.out.println("Score at best epoch: " + result.getBestModelScore());
+        
+        // Recupera o modelo com melhor desempenho:
+        
+        MultiLayerNetwork net = (MultiLayerNetwork) result.getBestModel();  
+        
+        // Predições:
+
+        trainIter.reset();
+        DataSet testDataSet = trainIter.next();
+        List<String> allClassLabels = trainRR.getLabels();
         int labelIndex = testDataSet.getLabels().argMax(1).getInt(0);
-        int[] predictedClasses = network.predict(testDataSet.getFeatures());
+        int[] predictedClasses = net.predict(testDataSet.getFeatures());
         String expectedResult = allClassLabels.get(labelIndex);
         String modelPrediction = allClassLabels.get(predictedClasses[0]);
-        System.out.print("\nFor a single example that is labeled " + expectedResult + " the model predicted " + modelPrediction + "\n\n");
+        System.out.print("\nNome da pessoa: " + expectedResult + " predição: " + modelPrediction + "\n\n");
         
         
-        ModelSerializer.writeModel(network, modelPath + "/model.dat", true);
-        
-        // Load test data:
- 		BufferedImage imagem = ImageIO.read(new File(testImage));
- 		String label = labelMaker.getLabelForPath(testImage).toString();
- 		byte[] pixels = ((DataBufferByte) imagem.getRaster().getDataBuffer()).getData();
- 		double [] vetorImagem = new double[pixels.length];
- 		for (int x=0;x<pixels.length; x++) {
- 			vetorImagem[x] = pixels[x];
- 		}
- 		int [] shape = {1,1,height,width};
- 		INDArray entrada = Nd4j.create(vetorImagem,shape,'c'); 
- 		
- 		// Roda inferências:
- 		entrada = entrada.div(255);
- 		INDArray results = network.output(entrada);
- 		System.out.println("Label: " + label + " resultados: " + results);
-        
-        //uiServer.stop();  // Always remember to do that!
 	}
 	
     private static ConvolutionLayer convInit(String name, int in, int out, int[] kernel, int[] stride, int[] pad, double bias) {
