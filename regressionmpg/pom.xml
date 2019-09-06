@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.neuraljava.samples</groupId>
-  <artifactId>classificationIris</artifactId>
+  <artifactId>regressionmpg</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>classificationIris</name>
+  <name>regressionmpg</name>
   <url>http://maven.apache.org</url>
 
   <properties>
@@ -61,7 +61,7 @@
   				</descriptorRefs>
   				<archive>
   					<manifest>
-  						<mainClass>com.neuraljava.samples.classificationIris.ClassificationIris</mainClass>
+  						<mainClass>com.neuraljava.samples.regressionmpg.RegressionMPG</mainClass>
   					</manifest>
   				</archive>
   			</configuration>
