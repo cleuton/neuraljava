@@ -186,16 +186,4 @@ public class TrainModel {
         
 	}
 	
-    private static ConvolutionLayer convInit(String name, int in, int out, int[] kernel, int[] stride, int[] pad, double bias) {
-        return new ConvolutionLayer.Builder(kernel, stride, pad).name(name).nIn(in).nOut(out).biasInit(bias).build();
-    }
-
-    private static ConvolutionLayer conv3x3(String name, int out, double bias) {
-        return new ConvolutionLayer.Builder(new int[]{3,3}, new int[] {1,1}, new int[] {1,1}).name(name).nOut(out).biasInit(bias).build();
-    }
-
-
-    private static SubsamplingLayer maxPool(String name, int[] kernel) {
-        return new SubsamplingLayer.Builder(kernel, new int[]{2,2}).name(name).build();
-    }
 }
